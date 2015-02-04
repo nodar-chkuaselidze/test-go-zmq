@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	zmq "github.com/pebbe/zmq4"
 )
 
@@ -24,26 +25,20 @@ func main() {
 		for _, socket := range sockets {
 			switch s := socket.Socket; s {
 			case frontend:
-				for {
-					msg, _ := s.Recv(0)
-					if more, _ := s.GetRcvmore(); more {
-						backend.Send(msg, zmq.SNDMORE)
-					} else {
-						backend.Send(msg, 0)
-						break
-					}
-				}
+				msg, _ := s.RecvMessage(0)
+				printMessage("frontend", msg)
+
+				backend.SendMessage(msg)
 			case backend:
-				for {
-					msg, _ := s.Recv(0)
-					if more, _ := s.GetRcvmore(); more {
-						frontend.Send(msg, zmq.SNDMORE)
-					} else {
-						frontend.Send(msg, 0)
-						break
-					}
-				}
+				msg, _ := s.RecvMessage(0)
+				printMessage("backend", msg)
+
+				frontend.SendMessage(msg)
 			}
 		}
 	}
+}
+
+func printMessage(end string, msg []string) {
+	fmt.Println("from ", end, ":", msg)
 }
